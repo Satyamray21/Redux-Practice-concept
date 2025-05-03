@@ -21,6 +21,17 @@ export const addStations = createAsyncThunk('/stations/addStations', async (form
   }
 });
 
+export const deleteStations = createAsyncThunk('/stations/deleteStations',async(stationId,thunkApi)=>{
+  try{
+    const res = axios.delete(`/stations/delete/${stationId}`);
+    return stationId;  
+  }
+  catch(error)
+  {
+    return thunkApi.rejectWithValue(error.response?.data?.message|| "Failed To delete");
+  }
+})
+
 const manageStationSlice = createSlice({
   name: 'manageStation',
   initialState: {
@@ -51,9 +62,13 @@ const manageStationSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(addStations.fulfilled, (state, action) => {
-        // Push only if action.payload is the new station object
+        
         // state.stations.push(action.payload);
-      });
+      })
+      .addCase(deleteStations.fulfilled,(state,action)=>{
+        state.stations=state.stations.filter(station=>station.stationId !== action.payload);
+      })
+      ;
   },
 });
 
