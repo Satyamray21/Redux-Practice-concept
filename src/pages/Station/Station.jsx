@@ -6,12 +6,20 @@ import {
   Button,
   MenuItem,
 } from "@mui/material";
-import { getStates, getCities } from "../../features/location/locationSlice.js";
 import { useSelector, useDispatch } from "react-redux";
+import { getStates, getCities } from "../../features/location/locationSlice.js";
+import { addStations } from "../../slice/manageStationSlice.js";
 
 const Station = () => {
-  const [state, setState] = useState("");
+  const [stateValue, setStateValue] = useState(""); // renamed to 'stateValue' for clarity
   const [city, setCity] = useState("");
+  const [formData, setFormData] = useState({
+    stationName: "",
+    contact: "",
+    emailId: "",
+    address: "",
+    pincode: "",
+  });
 
   const dispatch = useDispatch();
   const { states, cities, loading } = useSelector((state) => state.location);
@@ -22,9 +30,49 @@ const Station = () => {
 
   const handleStateChange = (e) => {
     const selectedState = e.target.value;
-    setState(selectedState);
+    setStateValue(selectedState); // Update state value
     setCity(""); // Reset city when state changes
     dispatch(getCities(selectedState));
+  };
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Basic form validation
+    if (
+      !formData.stationName ||
+      !formData.contact ||
+      !formData.address ||
+      !stateValue ||
+      !city
+    ) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    // Final data to send with the station
+    const finalData = {
+      ...formData,
+      state: stateValue,
+      city,
+    };
+
+    try {
+      await dispatch(addStations(finalData)).unwrap(); // Using unwrap to catch error in case of failure
+      alert("Station added successfully!");
+
+      // Reset form fields after successful submission
+      setFormData({
+        stationName: "",
+        contact: "",
+        emailId: "",
+        address: "",
+        pincode: "",
+      });
+      setStateValue("");
+      setCity("");
+    } catch (error) {
+      alert("Failed to add station: " + error);
+    }
   };
 
   return (
@@ -41,16 +89,44 @@ const Station = () => {
           maxWidth: 600,
         }}
       >
-        <TextField label="Station Name" fullWidth />
-        <TextField label="Contact Number" fullWidth />
-        <TextField label="Email ID" fullWidth />
-        <TextField label="Address / Street" fullWidth />
+        <TextField
+          label="Station Name"
+          fullWidth
+          value={formData.stationName}
+          onChange={(e) =>
+            setFormData({ ...formData, stationName: e.target.value })
+          }
+        />
+        <TextField
+          label="Contact Number"
+          fullWidth
+          value={formData.contact}
+          onChange={(e) =>
+            setFormData({ ...formData, contact: e.target.value })
+          }
+        />
+        <TextField
+          label="Email ID"
+          fullWidth
+          value={formData.emailId}
+          onChange={(e) =>
+            setFormData({ ...formData, emailId: e.target.value })
+          }
+        />
+        <TextField
+          label="Address / Street"
+          fullWidth
+          value={formData.address}
+          onChange={(e) =>
+            setFormData({ ...formData, address: e.target.value })
+          }
+        />
 
         {/* State Dropdown */}
         <TextField
           select
           label="Select State"
-          value={state}
+          value={stateValue}
           onChange={handleStateChange}
           fullWidth
         >
@@ -68,7 +144,7 @@ const Station = () => {
           value={city}
           onChange={(e) => setCity(e.target.value)}
           fullWidth
-          disabled={!state}
+          disabled={!stateValue}
         >
           {cities.map((ct) => (
             <MenuItem key={ct} value={ct}>
@@ -77,11 +153,18 @@ const Station = () => {
           ))}
         </TextField>
 
-        <TextField label="Pin Code" fullWidth />
+        <TextField
+          label="Pin Code"
+          fullWidth
+          value={formData.pinCode}
+          onChange={(e) =>
+            setFormData({ ...formData, pincode: e.target.value })
+          }
+        />
 
         {/* Submit Button Centered */}
         <Box sx={{ textAlign: "center", mt: 2 }}>
-          <Button variant="contained" color="primary">
+          <Button variant="contained" color="primary" onClick={handleSubmit}>
             Submit
           </Button>
         </Box>
