@@ -32,6 +32,28 @@ export const deleteStations = createAsyncThunk('/stations/deleteStations',async(
   }
 })
 
+export const getStationById = createAsyncThunk('/stations/getStationById',async(stationId,thunkApi)=>{
+  try{
+    const res= axios.get(`/stations//searchById/${stationId}`);
+    return res.data.message;
+  }
+  catch(error)
+  {
+    return thunkApi.rejectWithValue(error.response?.data?.message || "Failed to search the Station");
+  }
+})
+
+// Update a station
+export const updateStation = createAsyncThunk('/stations/updateStation', async ({ stationId, formData }, thunkApi) => {
+  try {
+    const res = await axios.put(`/stations/update/${stationId}`, formData);
+    return res.data.message; // assuming your API returns { message: "Station updated", data: { ...station } }
+  } catch (error) {
+    return thunkApi.rejectWithValue(error.response?.data?.message || "Failed to update station");
+  }
+});
+
+
 const manageStationSlice = createSlice({
   name: 'manageStation',
   initialState: {
@@ -45,6 +67,7 @@ const manageStationSlice = createSlice({
       address: "",
       pincode: "",
     },
+    currentStation: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -68,7 +91,39 @@ const manageStationSlice = createSlice({
       .addCase(deleteStations.fulfilled,(state,action)=>{
         state.stations=state.stations.filter(station=>station.stationId !== action.payload);
       })
-      ;
+      .addCase(getStationById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getStationById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentStation = action.payload; // store the fetched station
+      })
+      .addCase(getStationById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(updateStation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateStation.fulfilled, (state, action) => {
+        state.loading = false;
+      
+        const updatedStation = action.payload.data;
+        const index = state.stations.findIndex((s) => s.stationId === updatedStation.stationId);
+      
+        if (index !== -1) {
+          state.stations[index] = updatedStation; // update in list
+        }
+      
+        state.currentStation = updatedStation; // update current
+      })
+      .addCase(updateStation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+      
   },
 });
 
